@@ -1,70 +1,34 @@
 TEAM_LOGIN = "mhoyer"
 
 Vagrant.configure("2") do |config|
-  config.vm.provider "virtualbox" do |vb|
-    vb.memory = "1024"
-    vb.cpus = 1
-  end
-
-  K3S_TOKEN = "inception-k3s-token"
+  config.vm.box = "ubuntu/jammy64"
 
   # --- Server (K3s controller) ---
   config.vm.define "#{TEAM_LOGIN}S", primary: true do |server|
-    server.vm.box = "ubuntu/jammy64"
     server.vm.hostname = "#{TEAM_LOGIN}S"
     server.vm.network "private_network", ip: "192.168.56.110"
 
     server.vm.provider "virtualbox" do |vb|
       vb.name = "#{TEAM_LOGIN}S"
+      vb.memory = "2048"
+      vb.cpus = 2
     end
 
-    server.vm.provision "shell", inline: <<-SHELL
-      set -e
-      # Install kubectl
-      curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-      echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
-      apt-get update && apt-get install -y kubectl
-
-      # Install K3s server
-      curl -sfL https://get.k3s.io | sh -s - server \
-        --token #{K3S_TOKEN} \
-        --tls-san 192.168.56.110
-
-      # Configure kubectl for vagrant user
-      mkdir -p /home/vagrant/.kube
-      cp /etc/rancher/k3s/k3s.yaml /home/vagrant/.kube/config
-      chown -R vagrant:vagrant /home/vagrant/.kube
-      chmod 600 /home/vagrant/.kube/config
-      echo 'export KUBECONFIG=/home/vagrant/.kube/config' >> /home/vagrant/.bashrc
-    SHELL
+    server.vm.provision "shell", path: "scripts/server.sh"
   end
 
   # --- ServerWorker (K3s agent) ---
   config.vm.define "#{TEAM_LOGIN}SW" do |worker|
-    worker.vm.box = "ubuntu/jammy64"
     worker.vm.hostname = "#{TEAM_LOGIN}SW"
     worker.vm.network "private_network", ip: "192.168.56.111"
 
     worker.vm.provider "virtualbox" do |vb|
       vb.name = "#{TEAM_LOGIN}SW"
+      vb.memory = "1024"
+      vb.cpus = 1
     end
 
     # Agent must run after server is up and K3s is ready
-    worker.vm.provision "shell", inline: <<-SHELL
-      set -e
-      # Install kubectl
-      curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-      echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
-      apt-get update && apt-get install -y kubectl
-
-      for i in $(seq 1 30); do
-        if curl -sf -o /dev/null -k https://192.168.56.110:6443/healthz 2>/dev/null; then
-          break
-        fi
-        echo "Waiting for K3s server..."
-        sleep 2
-      done
-      curl -sfL https://get.k3s.io | K3S_URL=https://192.168.56.110:6443 K3S_TOKEN=#{K3S_TOKEN} sh -s - agent
-    SHELL
+    worker.vm.provision "shell", path: "scripts/worker.sh", args: ["192.168.56.110"]
   end
 end

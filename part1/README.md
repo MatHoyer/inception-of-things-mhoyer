@@ -17,6 +17,12 @@ vagrant ssh mhoyerS
 vagrant ssh mhoyerSW
 ```
 
+### SHOW NODES
+
+```bash
+sudo kubectl get nodes
+```
+
 ### Stop
 
 ```bash
