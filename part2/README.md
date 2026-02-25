@@ -1,6 +1,6 @@
 # Part 1 — K3s Cluster
 
-Two VMs: **mhoyerS** (server/controller) and **mhoyerSW** (worker/agent).
+One VMs: **mhoyerS** (server/controller).
 
 ## Commands
 
@@ -14,13 +14,18 @@ vagrant up
 
 ```bash
 vagrant ssh mhoyerS
-vagrant ssh mhoyerSW
 ```
 
-### Show nodes
+### Show running services
 
 ```bash
-sudo kubectl get nodes
+sudo kubectl get all
+```
+
+### Try curl
+
+```bash
+curl -H "Host:app2.com" 192.168.56.110
 ```
 
 ### Stop

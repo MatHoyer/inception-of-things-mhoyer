@@ -1,0 +1,21 @@
+TEAM_LOGIN = "mhoyer"
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/jammy64"
+
+  # --- Server (K3s controller) ---
+  config.vm.define "#{TEAM_LOGIN}S", primary: true do |server|
+    server.vm.hostname = "#{TEAM_LOGIN}S"
+    server.vm.network "private_network", ip: "192.168.56.110"
+
+    server.vm.provider "virtualbox" do |vb|
+      vb.name = "#{TEAM_LOGIN}S"
+      vb.memory = "2048"
+      vb.cpus = 2
+    end
+
+    server.vm.synced_folder "apps", "/home/vagrant/apps"
+    server.vm.synced_folder "k3s-config", "/home/vagrant/k3s-config"
+    server.vm.provision "shell", path: "scripts/server.sh"
+  end
+end
