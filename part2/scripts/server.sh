@@ -15,7 +15,7 @@ for app in app1 app2 app3; do
 done
 
 # Apply app manifests (nginx + HTML per app)
-for f in /home/vagrant/k3s-config/*.yaml; do
+for f in /home/vagrant/configs/*.yaml; do
   [ -f "$f" ] && sudo /usr/local/bin/kubectl apply -f "$f"
 done
 
