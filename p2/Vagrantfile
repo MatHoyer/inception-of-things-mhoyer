@@ -15,7 +15,7 @@ Vagrant.configure("2") do |config|
     end
 
     server.vm.synced_folder "apps", "/home/vagrant/apps"
-    server.vm.synced_folder "k3s-config", "/home/vagrant/k3s-config"
+    server.vm.synced_folder "configs", "/home/vagrant/configs"
     server.vm.provision "shell", path: "scripts/server.sh"
   end
 end
