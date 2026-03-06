@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - app1
+  - app2
+  - app3
+configMapGenerator:
+  - name: app-html
+    files:
+      - index.html=app-html/index.html
+      - entrypoint.sh=app-html/entrypoint.sh
+    options:
+      disableNameSuffixHash: true
