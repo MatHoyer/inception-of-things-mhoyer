@@ -1,6 +1,9 @@
 #!/bin/bash
+
+IP=$1
+
 # Install K3s on the master node
-curl -sfL https://get.k3s.io | sh -
+curl -sfL https://get.k3s.io | sh -s - server --node-ip=$IP
 
 # Make sure kubectl is set up for the vagrant user
 sudo mkdir -p /home/vagrant/.kube
