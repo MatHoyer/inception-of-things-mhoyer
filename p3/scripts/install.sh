@@ -43,12 +43,14 @@ curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/lat
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
-# Apply argocd ingress
-# sudo /usr/local/bin/kubectl apply -f ../configs/argocd/ingress.yaml
-kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+sudo /usr/local/bin/kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
 
-sudo echo "127.0.0.1 argocd.local" >> /etc/hosts
-sudo echo "127.0.0.1 app.local" >> /etc/hosts
+until [ -n "$(sudo /usr/local/bin/kubectl get svc argocd-server -n argocd -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)" ]; do echo "Waiting for LoadBalancer IP..."; sleep 5; done
+IP=$(sudo /usr/local/bin/kubectl get svc argocd-server -n argocd -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+until [ -n "$(argocd admin initial-password -n argocd 2>/dev/null)" ]; do echo "Waiting for initial password..."; sleep 5; done
+
+sudo echo "$IP argocd.local" >> /etc/hosts
 echo "Argo CD UI: http://argocd.local"
-echo "App: http://app.local"
+echo "Initial username: admin"
 echo "Initial password: $(argocd admin initial-password -n argocd)"
