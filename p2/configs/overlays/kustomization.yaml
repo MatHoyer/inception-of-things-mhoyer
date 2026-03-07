@@ -8,6 +8,7 @@ configMapGenerator:
   - name: app-html
     files:
       - index.html=app-html/index.html
+      - index.css=app-html/index.css
       - entrypoint.sh=app-html/entrypoint.sh
     options:
       disableNameSuffixHash: true

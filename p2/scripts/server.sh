@@ -3,7 +3,7 @@
 IP=$1
 
 # Install K3s on the master node (bind to host-only IP so node and API use 192.168.56.110)
-curl -sfL https://get.k3s.io | sh -s - server --node-ip=$MASTER_IP
+curl -sfL https://get.k3s.io | sh -s - server --node-ip=$IP
 
 # Make sure kubectl is set up for the vagrant user (wait for k3s to write kubeconfig)
 sudo mkdir -p /home/vagrant/.kube
