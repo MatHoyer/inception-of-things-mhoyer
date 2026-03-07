@@ -32,22 +32,23 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 # K3d
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
-k3d cluster create mycluster
-kubectl get nodes
-kubectl create namespace argocd
-kubectl create namespace dev
-kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-kubectl get pods -n argocd
+sudo k3d cluster create mycluster
+sudo /usr/local/bin/kubectl get nodes
+sudo /usr/local/bin/kubectl create namespace argocd
+sudo /usr/local/bin/kubectl create namespace dev
+sudo /usr/local/bin/kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+sudo /usr/local/bin/kubectl get pods -n argocd
 
 curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
 # Apply argocd ingress
-sudo /usr/local/bin/kubectl apply -f /home/vagrant/configs/argocd/ingress.yaml
+# sudo /usr/local/bin/kubectl apply -f ../configs/argocd/ingress.yaml
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
 
 sudo echo "127.0.0.1 argocd.local" >> /etc/hosts
 sudo echo "127.0.0.1 app.local" >> /etc/hosts
-echo "Argo CD UI: http://argocd.local (add to /etc/hosts: <host-ip> argocd.local)"
-echo "App: http://app.local (add to /etc/hosts: <host-ip> app.local)"
+echo "Argo CD UI: http://argocd.local"
+echo "App: http://app.local"
 echo "Initial password: $(argocd admin initial-password -n argocd)"
