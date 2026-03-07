@@ -5,7 +5,7 @@ sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-doc podm
 
 # Add Docker's official GPG key:
 sudo apt update
-sudo apt install ca-certificates curl
+sudo apt install -y ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -32,7 +32,8 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 # K3d
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
-sudo k3d cluster create mycluster
+# Map Traefik 80/443 to host so you can hit localhost (and app.local / argocd.local via /etc/hosts)
+sudo k3d cluster create mycluster -p "80:80@loadbalancer" -p "443:443@loadbalancer"
 sudo /usr/local/bin/kubectl get nodes
 sudo /usr/local/bin/kubectl create namespace argocd
 sudo /usr/local/bin/kubectl create namespace dev
