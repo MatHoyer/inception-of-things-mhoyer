@@ -1,7 +1,4 @@
 #!/bin/bash
-apt-get update
-
-apt-get install -y curl
 
 # Docker
 sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-doc podman-docker containerd runc | cut -f1)
@@ -46,10 +43,8 @@ curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/lat
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
-# Apply manifests
-for f in ../configs/*.yaml; do
-  [ -f "$f" ] && sudo /usr/local/bin/kubectl apply -f "$f"
-done
+# Apply argocd ingress
+sudo /usr/local/bin/kubectl apply -f /home/vagrant/configs/argocd/ingress.yaml
 
 sudo echo "127.0.0.1 argocd.local" >> /etc/hosts
 sudo echo "127.0.0.1 app.local" >> /etc/hosts
