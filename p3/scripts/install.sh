@@ -43,13 +43,14 @@ curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/lat
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
-sudo /usr/local/bin/kubectl annotate svc argocd-server -n argocd traefik.ingress.kubernetes.io/service.serversscheme=https --overwrite
-sudo /usr/local/bin/kubectl apply -f ../configs/argocd/ingress.yaml
+# ArgoCD en HTTP derrière Traefik (server.insecure + Ingress port 80)
+sudo /usr/local/bin/kubectl apply -f "$(dirname "$0")/../configs/argocd/cmd-params-insecure.yaml"
+sudo /usr/local/bin/kubectl apply -f "$(dirname "$0")/../configs/argocd/ingress.yaml"
+sudo /usr/local/bin/kubectl rollout restart deployment argocd-server -n argocd
 
 until [ -n "$(argocd admin initial-password -n argocd 2>/dev/null)" ]; do echo "Waiting for initial password..."; sleep 5; done
 
-sudo echo "127.0.0.1 argocd.local" >> /etc/hosts
-sudo echo "127.0.0.1 app.local" >> /etc/hosts
+sudo bash -c 'echo "127.0.0.1 argocd.local app.local" >> /etc/hosts'
 echo "Argo CD UI: http://argocd.local"
 echo "App UI: http://app.local"
 echo "Initial username: admin"
