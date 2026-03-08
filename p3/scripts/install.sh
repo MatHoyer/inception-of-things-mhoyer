@@ -32,7 +32,6 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 # K3d
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
-# Map Traefik 80/443 to host so you can hit localhost (and app.local / argocd.local via /etc/hosts)
 sudo k3d cluster create mycluster -p "80:80@loadbalancer" -p "443:443@loadbalancer"
 sudo /usr/local/bin/kubectl get nodes
 sudo /usr/local/bin/kubectl create namespace argocd
@@ -44,14 +43,15 @@ curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/lat
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
-sudo /usr/local/bin/kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
-
-until [ -n "$(sudo /usr/local/bin/kubectl get svc argocd-server -n argocd -o=jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)" ]; do echo "Waiting for LoadBalancer IP..."; sleep 5; done
-IP=$(sudo /usr/local/bin/kubectl get svc argocd-server -n argocd -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+# ArgoCD en HTTP derrière Traefik (server.insecure + Ingress port 80)
+sudo /usr/local/bin/kubectl apply -f "$(dirname "$0")/../configs/argocd/cmd-params-insecure.yaml"
+sudo /usr/local/bin/kubectl apply -f "$(dirname "$0")/../configs/argocd/ingress.yaml"
+sudo /usr/local/bin/kubectl rollout restart deployment argocd-server -n argocd
 
 until [ -n "$(argocd admin initial-password -n argocd 2>/dev/null)" ]; do echo "Waiting for initial password..."; sleep 5; done
 
-sudo echo "$IP argocd.local" >> /etc/hosts
+sudo bash -c 'echo "127.0.0.1 argocd.local app.local" >> /etc/hosts'
 echo "Argo CD UI: http://argocd.local"
+echo "App UI: http://app.local"
 echo "Initial username: admin"
 echo "Initial password: $(argocd admin initial-password -n argocd)"
