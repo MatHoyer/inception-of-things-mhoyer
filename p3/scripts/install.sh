@@ -32,7 +32,7 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 # K3d
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
-sudo k3d cluster create mycluster
+sudo k3d cluster create mycluster -p "80:80@loadbalancer" -p "443:443@loadbalancer"
 sudo /usr/local/bin/kubectl get nodes
 sudo /usr/local/bin/kubectl create namespace argocd
 sudo /usr/local/bin/kubectl create namespace dev
@@ -44,6 +44,7 @@ sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
 sudo /usr/local/bin/kubectl annotate svc argocd-server -n argocd traefik.ingress.kubernetes.io/service.serversscheme=https --overwrite
+sudo /usr/local/bin/kubectl apply -f ../configs/argocd/ingress.yaml
 
 until [ -n "$(argocd admin initial-password -n argocd 2>/dev/null)" ]; do echo "Waiting for initial password..."; sleep 5; done
 
