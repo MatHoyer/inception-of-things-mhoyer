@@ -33,25 +33,24 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 sudo k3d cluster create mycluster -p "80:80@loadbalancer" -p "443:443@loadbalancer"
-sudo /usr/local/bin/kubectl get nodes
 sudo /usr/local/bin/kubectl create namespace argocd
 sudo /usr/local/bin/kubectl create namespace dev
 sudo /usr/local/bin/kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-sudo /usr/local/bin/kubectl get pods -n argocd
 
 curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
 rm argocd-linux-amd64
 
-# ArgoCD en HTTP derrière Traefik (server.insecure + Ingress port 80)
-sudo /usr/local/bin/kubectl apply -f "$(dirname "$0")/../configs/argocd/cmd-params-insecure.yaml"
-sudo /usr/local/bin/kubectl apply -f "$(dirname "$0")/../configs/argocd/ingress.yaml"
+echo "Waiting for Argo CD server to be available..."
+sudo /usr/local/bin/kubectl wait --namespace argocd --for=condition=available --timeout=180s deployment/argocd-server
+
+sudo /usr/local/bin/kubectl apply -n argocd -f $(dirname "$0")/../configs/argocd
 sudo /usr/local/bin/kubectl rollout restart deployment argocd-server -n argocd
 
-until [ -n "$(argocd admin initial-password -n argocd 2>/dev/null)" ]; do echo "Waiting for initial password..."; sleep 5; done
+until [ -n "$(argocd admin initial-password -n argocd 2>/dev/null)" ]; do echo "Waiting for password..."; sleep 5; done
 
 sudo bash -c 'echo "127.0.0.1 argocd.local app.local" >> /etc/hosts'
-echo "Argo CD UI: http://argocd.local"
-echo "App UI: http://app.local"
+echo "Argo CD UI: https://argocd.local"
+echo "App UI: https://app.local"
 echo "Initial username: admin"
 echo "Initial password: $(argocd admin initial-password -n argocd)"
