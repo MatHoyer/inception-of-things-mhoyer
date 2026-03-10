@@ -1,0 +1,59 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: gitlab
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gitlab-http
+  namespace: gitlab
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`gitlab.local`)
+      priority: 10
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: gitlab-webservice-default
+          port: 8181
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: gitlab-forward-headers
+  namespace: gitlab
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+      X-Forwarded-Host: "gitlab.local"
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gitlab-https
+  namespace: gitlab
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`gitlab.local`)
+      priority: 10
+      middlewares:
+        - name: gitlab-forward-headers
+      services:
+        - name: gitlab-webservice-default
+          port: 8181
+  tls:
+    certResolver: default
