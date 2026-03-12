@@ -1,0 +1,44 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: dev
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: app-http
+  namespace: dev
+spec:
+  entryPoints:
+    - web # 80
+  routes:
+    - kind: Rule
+      match: Host(`app.local`)
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: app
+          port: 8888
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: app-ingress
+  namespace: dev
+spec:
+  entryPoints:
+    - websecure # 443
+  routes:
+    - kind: Rule
+      match: Host(`app.local`)
+      services:
+        - name: app
+          port: 8888
+  tls:
+    certResolver: default

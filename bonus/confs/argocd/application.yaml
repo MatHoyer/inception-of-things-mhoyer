@@ -6,9 +6,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/MatHoyer/inception-of-things-mhoyer.git
+    repoURL: https://gitlab.local/root/inception-repo.git
     targetRevision: main
-    path: p3/configs/application
   destination:
     server: https://kubernetes.default.svc
     namespace: dev

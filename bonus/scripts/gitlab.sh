@@ -1,3 +1,7 @@
+#!/bin/bash
+
+set -e
+
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
 
 kubectl create namespace gitlab
@@ -22,7 +26,6 @@ helm install --namespace gitlab gitlab gitlab/gitlab \
   --set global.praefect.enabled=false \
   --set global.grafana.enabled=false \
   --set gitlab.gitlab-exporter.enabled=false \
-  --set gitlab.toolbox.enabled=false \
   --set global.appConfig.lfs.enabled=false \
   --set global.appConfig.artifacts.enabled=false \
   --set global.appConfig.uploads.enabled=false \
@@ -49,9 +52,13 @@ helm install --namespace gitlab gitlab gitlab/gitlab \
 
 echo "Waiting for GitLab to be available..."
 kubectl wait --namespace gitlab --for=condition=available --timeout=300s deployment/gitlab-webservice-default
+kubectl wait --namespace gitlab --for=condition=available --timeout=300s deployment/gitlab-toolbox 2>/dev/null || true
 
 kubectl apply -n gitlab -f /home/vagrant/confs/gitlab
 
+ROOT_PW=$(kubectl get secret --namespace gitlab gitlab-gitlab-initial-root-password -o jsonpath='{.data.password}' | base64 --decode)
+
 echo "GitLab UI: https://gitlab.local"
 echo "Initial username: root"
-echo "Initial password: $(kubectl get secret --namespace gitlab gitlab-gitlab-initial-root-password -o jsonpath='{.data.password}' | base64 --decode)"
+echo "Initial password: $ROOT_PW"
+
