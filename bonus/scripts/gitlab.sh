@@ -2,11 +2,13 @@
 
 set -e
 
+IP=$1
+
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
 
 kubectl create namespace gitlab
 
-echo "127.0.0.1 gitlab.local" >> /etc/hosts
+echo "$IP gitlab.local" >> /etc/hosts
 
 helm repo add gitlab https://charts.gitlab.io/
 helm repo update

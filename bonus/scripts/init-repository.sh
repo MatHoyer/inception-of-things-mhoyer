@@ -1,40 +1,29 @@
 #!/bin/bash
 
 set -e
-set +H  # disable history expansion so ! in gitlab-rails runner code is not interpreted
 
 REPO_NAME="inception-repo"
+GITLAB_API="https://gitlab.local/api/v4"
 ROOT_PW=$(kubectl get secret --namespace gitlab gitlab-gitlab-initial-root-password -o jsonpath='{.data.password}' | base64 --decode)
 
+echo "Creating GitLab token for $REPO_NAME..."
+GITLAB_TOKEN=$(kubectl exec -n gitlab deployment/gitlab-toolbox -c toolbox -- \
+  gitlab-rails runner "
+    u = User.find_by_username('root');
+    u.personal_access_tokens.find_by(name: '${REPO_NAME}-token')&.destroy;
+    token = u.personal_access_tokens.create(
+      name: '${REPO_NAME}-token',
+      scopes: ['api','write_repository'],
+      expires_at: 30.days.from_now
+    );
+    puts token.token;
+  " | tail -1 | tr -d '\r\n')
+
 echo "Creating public repository $REPO_NAME..."
-REPO_FULL_PATH=$(kubectl exec -n gitlab deployment/gitlab-toolbox -c toolbox -- gitlab-rails runner "
-  ApplicationSetting.current_without_cache.update!(restricted_visibility_levels: [])
-  user = User.find_by(username: 'root')
-  ns = nil
-  org = nil
-  begin
-    org = Organization.first
-    ns = Namespace.find_by(organization_id: org.id, parent_id: nil)
-    if ns.nil? && org
-      ns = Group.create!(name: 'inception', path: 'inception', visibility_level: 20, organization_id: org.id)
-      ns.add_owner(user)
-    end
-  rescue NameError
-  end
-  ns = user.namespace if ns.nil?
-  Project.find_by(path: '$REPO_NAME')&.destroy
-  p = Project.create!(
-    name: '$REPO_NAME',
-    path: '$REPO_NAME',
-    visibility_level: 20,
-    creator: user,
-    namespace: ns
-  )
-  Project.where(id: p.id).update_all(visibility_level: 20)
-  p.add_member(user, Gitlab::Access::OWNER) unless p.member?(user)
-  puts p.full_path
-" 2>/dev/null | tail -1)
-REPO_FULL_PATH=${REPO_FULL_PATH:-root/$REPO_NAME}
+curl -sS -k -H "PRIVATE-TOKEN: $GITLAB_TOKEN" -H "Content-Type: application/json" \
+  -X POST "$GITLAB_API/projects" -d "{\"name\":\"$REPO_NAME\",\"path\":\"$REPO_NAME\",\"visibility\":\"public\"}"
+
+REPO_FULL_PATH="root/$REPO_NAME"
 
 PROJECT_FOLDER="project-v1"
 echo "Initializing project $PROJECT_FOLDER..."

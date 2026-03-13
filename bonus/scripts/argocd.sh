@@ -2,6 +2,8 @@
 
 set -e
 
+IP=$1
+
 kubectl create namespace argocd
 
 kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
@@ -18,7 +20,7 @@ kubectl rollout restart deployment argocd-server -n argocd
 
 until [ -n "$(argocd admin initial-password -n argocd 2>/dev/null)" ]; do echo "Waiting for password..."; sleep 5; done
 
-bash -c 'echo "127.0.0.1 argocd.local app.local" >> /etc/hosts'
+bash -c "echo '$IP argocd.local app.local' >> /etc/hosts"
 echo "Argo CD UI: https://argocd.local"
 echo "App UI: https://app.local"
 echo "Initial username: admin"

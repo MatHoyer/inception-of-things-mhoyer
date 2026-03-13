@@ -6,7 +6,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://gitlab.local/root/inception-repo.git
+    repoURL: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/root/inception-repo.git
+    path: .
     targetRevision: main
   destination:
     server: https://kubernetes.default.svc
