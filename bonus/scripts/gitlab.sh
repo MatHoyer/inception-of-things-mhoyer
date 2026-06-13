@@ -13,6 +13,7 @@ echo "$IP gitlab.local" >> /etc/hosts
 helm repo add gitlab https://charts.gitlab.io/
 helm repo update
 helm install --namespace gitlab gitlab gitlab/gitlab \
+  --version 9.9.0 \
   --timeout 600s \
   --set global.hosts.domain=local \
   --set global.hosts.https=true \
